@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Management System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            primary: '#2563EB', primaryDark: '#1D4ED8',
+            secondary: '#64748B', success: '#22C55E',
+            danger: '#EF4444', warning: '#F59E0B',
+            background: '#F9FAFB', surface: '#FFFFFF',
+            google: '#DB4437', facebook: '#4267B2',
+            text: { primary: '#111827', secondary: '#6B7280' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .auth-btn { transition: all 0.2s ease; }
+    .auth-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .sidebar-link { transition: all 0.2s ease; }
+    .sidebar-link:hover { background-color: rgba(37, 99, 235, 0.1); }
+    .sidebar-link.active { background-color: #2563EB; color: white; }
+    .table-row:hover { background-color: #F3F4F6; }
+    .modal-overlay { background-color: rgba(0, 0, 0, 0.5); }
+    .toast { animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .loading { border-top-color: #2563EB; animation: spinner 0.6s linear infinite; }
+    @keyframes spinner { to { transform: rotate(360deg); } }
+    .tab-active { border-bottom: 2px solid #2563EB; color: #2563EB; }
+  </style>
+</head>
+<body class="bg-background text-text-primary min-h-screen">
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+  <!-- Login Page -->
+  <div id="login-page" class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-surface p-8 rounded-2xl shadow-xl w-full max-w-md">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-graduation-cap text-white text-2xl"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-text-primary">Student Management</h1>
+        <p class="text-text-secondary mt-2">Sign in to continue</p>
+      </div>
+      
+      <!-- Social Login Buttons -->
+      <div class="space-y-3 mb-6">
+        <button onclick="loginWithGoogle()" 
+          class="auth-btn w-full flex items-center justify-center gap-3 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 transition font-medium">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5">
+          <span>Continue with Google</span>
+        </button>
+        <button onclick="loginWithFacebook()" 
+          class="auth-btn w-full flex items-center justify-center gap-3 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 transition font-medium">
+          <i class="fab fa-facebook text-[#4267B2] text-xl"></i>
+          <span>Continue with Facebook</span>
+        </button>
+      </div>
+      
+      <div class="flex items-center gap-4 mb-6">
+        <div class="flex-1 h-px bg-gray-300"></div>
+        <span class="text-text-secondary text-sm">OR</span>
+        <div class="flex-1 h-px bg-gray-300"></div>
+      </div>
+      
+      <!-- Tabs -->
+      <div class="flex border-b mb-6">
+        <button onclick="switchAuthTab('email')" id="tab-email" 
+          class="flex-1 py-3 font-medium tab-active text-sm">Email</button>
+        <button onclick="switchAuthTab('phone')" id="tab-phone" 
+          class="flex-1 py-3 font-medium text-text-secondary text-sm">Phone</button>
+        <button onclick="switchAuthTab('register')" id="tab-register" 
+          class="flex-1 py-3 font-medium text-text-secondary text-sm">Register</button>
+      </div>
+      
+      <!-- Email Login Form -->
+      <form id="login-form" class="auth-form space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text-secondary mb-2">Email or Username</label>
+          <input type="text" id="login-username" 
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
+            placeholder="Enter email or username">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text-secondary mb-2">Password</label>
+          <input type="password" id="login-password" 
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
+            placeholder="Enter password">
+        </div>
+        <button type="submit" 
+          class="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primaryDark transition duration-200">
+          Sign In
+        </button>
+      </form>
+      
+      <!-- Phone Login Form -->
+      <form id="phone-form" class="auth-form hidden space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text-secondary mb-2">Phone Number</label>
+          <input type="tel" id="phone-number" 
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
+            placeholder="+91 9876543210">
+        </div>
+        <button type="button" onclick="sendOTP()" 
+          class="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primaryDark transition">
+          Send OTP
+        </button>
+      </form>
+      
+      <!-- OTP Verification Form -->
+      <form id="otp-form" class="auth-form hidden space-y-4">
+        <div class="text-center mb-4">
+          <p class="text-text-secondary">Enter the OTP sent to <span id="otp-sent-to" class="font-medium"></span></p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text-secondary mb-2">OTP</label>
+          <input type="text" id="otp-input" maxlength="6"
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition text-center text-2xl tracking-widest"
+            placeholder="000000">
+        </div>
+        <button type="button" onclick="verifyOTP()" 
+          class="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primaryDark transition">
+          Verify OTP & Login
+        </button>
+        <button type="button" onclick="resetPhoneAuth()" 
+          class="w-full text-text-secondary py-2 text-sm hover:text-primary transition">
+          Change phone number
+        </button>
+      </form>
+      
+      <!-- Registration Form -->
+      <form id="register-form" class="auth-form hidden space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text-secondary mb-2">Full Name</label>
+          <input type="text" id="reg-name" 
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
+            placeholder="Enter your name">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text-secondary mb-2">Email</label>
+          <input type="email" id="reg-email" 
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
+            placeholder="Enter email">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text-secondary mb-2">Phone (Optional)</label>
+          <input type="tel" id="reg-phone" 
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
+            placeholder="+91 9876543210">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text-secondary mb-2">Password</label>
+          <input type="password" id="reg-password" 
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
+            placeholder="Create password">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text-secondary mb-2">Confirm Password</label>
+          <input type="password" id="reg-confirm-password" 
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
+            placeholder="Confirm password">
+        </div>
+        <button type="button" onclick="registerUser()" 
+          class="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primaryDark transition">
+          Register
+        </button>
+      </form>
+      
+      <!-- Verify Email Section -->
+      <div id="verify-email-section" class="hidden space-y-4">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-envelope text-primary text-2xl"></i>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">Verify Your Email</h3>
+          <p class="text-text-secondary text-sm mb-4">Click the button below to receive a verification email</p>
+        </div>
+        <button type="button" onclick="sendVerificationEmail()" 
+          class="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primaryDark transition">
+          <i class="fas fa-paper-plane mr-2"></i>Send Verification Email
+        </button>
+        <button type="button" onclick="switchAuthTab('email')" 
+          class="w-full text-text-secondary py-2 text-sm hover:text-primary transition">
+          Back to Login
+        </button>
+      </div>
+      
+      <p class="text-center text-sm text-text-secondary mt-6">
+        Demo: admin@school.edu / admin123
+      </p>
+    </div>
+  </div>
+
+  <!-- Main Application -->
+  <div id="app" class="hidden">
+    <div class="flex min-h-screen">
+      <!-- Sidebar -->
+      <aside class="w-64 bg-surface shadow-lg fixed h-full z-10">
+        <div class="p-6">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <i class="fas fa-graduation-cap text-white"></i>
+            </div>
+            <span class="font-bold text-lg">Student Mgmt</span>
+          </div>
+          <div id="user-info" class="mt-4 p-3 bg-gray-50 rounded-lg">
+            <p class="text-xs text-text-secondary">Signed in as</p>
+            <p id="current-user" class="font-medium text-sm truncate">Admin</p>
+            <p id="auth-provider" class="text-xs text-primary mt-1"></p>
+          </div>
+        </div>
+        <nav class="mt-4 px-4 space-y-1">
+          <a href="#" onclick="showPage('dashboard')" id="nav-dashboard" 
+            class="sidebar-link active flex items-center gap-3 px-4 py-3 rounded-lg text-text-primary">
+            <i class="fas fa-chart-line w-5"></i><span>Dashboard</span>
+          </a>
+          <a href="#" onclick="showPage('students')" id="nav-students"
+            class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-text-primary">
+            <i class="fas fa-users w-5"></i><span>Students</span>
+          </a>
+          <a href="#" onclick="showPage('marks')" id="nav-marks"
+            class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-text-primary">
+            <i class="fas fa-clipboard-check w-5"></i><span>Marks</span>
+          </a>
+          <a href="#" onclick="showPage('attendance')" id="nav-attendance"
+            class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-text-primary">
+            <i class="fas fa-calendar-check w-5"></i><span>Attendance</span>
+          </a>
+          <a href="#" onclick="showPage('admin')" id="nav-admin"
+            class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-text-primary">
+            <i class="fas fa-cogs w-5"></i><span>Admin Panel</span>
+          </a>
+        </nav>
+        <div class="absolute bottom-0 left-0 right-0 p-4 border-t">
+          <button onclick="logout()" 
+            class="flex items-center gap-3 px-4 py-3 rounded-lg text-danger hover:bg-red-50 w-full transition">
+            <i class="fas fa-sign-out-alt w-5"></i><span>Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="ml-64 flex-1 p-8">
+        <!-- Dashboard Page -->
+        <div id="page-dashboard" class="page">
+          <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-surface p-6 rounded-xl shadow-sm">
+              <div class="flex items-center justify-between">
+                <div><p class="text-text-secondary text-sm">Total Students</p><p id="stat-total-students" class="text-3xl font-bold mt-1">0</p></div>
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"><i class="fas fa-users text-primary text-xl"></i></div>
+              </div>
+            </div>
+            <div class="bg-surface p-6 rounded-xl shadow-sm">
+              <div class="flex items-center justify-between">
+                <div><p class="text-text-secondary text-sm">Total Users</p><p id="stat-total-users" class="text-3xl font-bold mt-1">0</p></div>
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"><i class="fas fa-user-check text-success text-xl"></i></div>
+              </div>
+            </div>
+            <div class="bg-surface p-6 rounded-xl shadow-sm">
+              <div class="flex items-center justify-between">
+                <div><p class="text-text-secondary text-sm">Today's Attendance</p><p id="stat-today-attendance" class="text-3xl font-bold mt-1">0/0</p></div>
+                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center"><i class="fas fa-calendar-day text-warning text-xl"></i></div>
+              </div>
+            </div>
+            <div class="bg-surface p-6 rounded-xl shadow-sm">
+              <div class="flex items-center justify-between">
+                <div><p class="text-text-secondary text-sm">Avg Attendance</p><p id="stat-avg-attendance" class="text-3xl font-bold mt-1">0%</p></div>
+                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"><i class="fas fa-percentage text-purple-600 text-xl"></i></div>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-surface p-6 rounded-xl shadow-sm">
+              <h2 class="text-lg font-semibold mb-4">Department Distribution</h2><canvas id="dept-chart"></canvas>
+            </div>
+            <div class="bg-surface p-6 rounded-xl shadow-sm">
+              <h2 class="text-lg font-semibold mb-4">Year-wise Distribution</h2><canvas id="year-chart"></canvas>
+            </div>
+          </div>
+          <div class="bg-surface p-6 rounded-xl shadow-sm">
+            <h2 class="text-lg font-semibold mb-4">Recent Activities</h2>
+            <div id="recent-activities" class="space-y-3"></div>
+          </div>
+        </div>
+
+        <!-- Students Page -->
+        <div id="page-students" class="page hidden">
+          <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">Students</h1>
+            <button onclick="openModal('student-modal')" 
+              class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primaryDark transition">
+              <i class="fas fa-plus mr-2"></i>Add Student
+            </button>
+          </div>
+          <div class="bg-surface p-4 rounded-xl shadow-sm mb-6">
+            <div class="flex flex-wrap gap-4">
+              <div class="flex-1 min-w-64">
+                <div class="relative">
+                  <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                  <input type="text" id="student-search" onkeyup="filterStudents()"
+                    class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
+                    placeholder="Search by name or register number...">
+                </div>
+              </div>
+              <select id="filter-department" onchange="filterStudents()" class="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none">
+                <option value="">All Departments</option>
+                <option value="CSE">CSE</option><option value="ECE">ECE</option>
+                <option value="MECH">MECH</option><option value="CIVIL">CIVIL</option>
+                <option value="IT">IT</option>
+              </select>
+              <select id="filter-year" onchange="filterStudents()" class="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none">
+                <option value="">All Years</option>
+                <option value="1">1st Year</option><option value="2">2nd Year</option>
+                <option value="3">3rd Year</option><option value="4">4th Year</option>
+              </select>
+            </div>
+          </div>
+          <div class="bg-surface rounded-xl shadow-sm overflow-hidden">
+            <table class="w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Register No</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Name</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Department</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Year</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Email</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="students-table">
+                <tr><td colspan="6" class="px-6 py-8 text-center text-text-secondary">Loading students...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Marks Page -->
+        <div id="page-marks" class="page hidden">
+          <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">Marks Management</h1>
+            <button onclick="openModal('marks-modal')" 
+              class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primaryDark transition">
+              <i class="fas fa-plus mr-2"></i>Add Marks
+            </button>
+          </div>
+          <div class="bg-surface p-4 rounded-xl shadow-sm mb-6">
+            <label class="block text-sm font-medium text-text-secondary mb-2">Select Student</label>
+            <select id="marks-student-select" onchange="loadStudentMarks()" 
+              class="w-full max-w-md px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none">
+              <option value="">Choose a student...</option>
+            </select>
+          </div>
+          <div id="marks-summary" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6 hidden">
+            <div class="bg-surface p-4 rounded-xl shadow-sm"><p class="text-text-secondary text-sm">Total Subjects</p><p id="marks-subject-count" class="text-2xl font-bold">0</p></div>
+            <div class="bg-surface p-4 rounded-xl shadow-sm"><p class="text-text-secondary text-sm">Total Marks</p><p id="marks-total" class="text-2xl font-bold">0</p></div>
+            <div class="bg-surface p-4 rounded-xl shadow-sm"><p class="text-text-secondary text-sm">Average</p><p id="marks-average" class="text-2xl font-bold">0</p></div>
+            <div class="bg-surface p-4 rounded-xl shadow-sm"><p class="text-text-secondary text-sm">Percentage</p><p id="marks-percentage" class="text-2xl font-bold">0%</p></div>
+          </div>
+          <div class="bg-surface rounded-xl shadow-sm overflow-hidden">
+            <table class="w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Subject</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Marks</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Max Marks</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="marks-table"><tr><td colspan="4" class="px-6 py-8 text-center text-text-secondary">Select a student to view marks</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Attendance Page -->
+        <div id="page-attendance" class="page hidden">
+          <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-bold">Attendance Management</h1></div>
+          <div class="bg-surface p-4 rounded-xl shadow-sm mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-text-secondary mb-2">Select Student</label>
+                <select id="attendance-student-select" onchange="loadStudentAttendance()" 
+                  class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none">
+                  <option value="">Choose a student...</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-text-secondary mb-2">Start Date</label>
+                <input type="date" id="attendance-start-date" onchange="loadStudentAttendance()"
+                  class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-text-secondary mb-2">End Date</label>
+                <input type="date" id="attendance-end-date" onchange="loadStudentAttendance()"
+                  class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none">
+              </div>
+            </div>
+          </div>
+          <div id="attendance-summary" class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6 hidden">
+            <div class="bg-surface p-4 rounded-xl shadow-sm"><p class="text-text-secondary text-sm">Total Days</p><p id="attendance-total" class="text-2xl font-bold">0</p></div>
+            <div class="bg-green-50 p-4 rounded-xl border border-green-200"><p class="text-green-700 text-sm">Present</p><p id="attendance-present" class="text-2xl font-bold text-green-600">0</p></div>
+            <div class="bg-red-50 p-4 rounded-xl border border-red-200"><p class="text-red-700 text-sm">Absent</p><p id="attendance-absent" class="text-2xl font-bold text-red-600">0</p></div>
+            <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200"><p class="text-yellow-700 text-sm">Leave</p><p id="attendance-leave" class="text-2xl font-bold text-yellow-600">0</p></div>
+            <div class="bg-surface p-4 rounded-xl shadow-sm"><p class="text-text-secondary text-sm">Percentage</p><p id="attendance-percentage" class="text-2xl font-bold">0%</p></div>
+          </div>
+          <div class="bg-surface rounded-xl shadow-sm overflow-hidden">
+            <table class="w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Date</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Status</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="attendance-table"><tr><td colspan="3" class="px-6 py-8 text-center text-text-secondary">Select a student to view attendance</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Admin Panel Page -->
+        <div id="page-admin" class="page hidden">
+          <h1 class="text-2xl font-bold mb-6">Admin Panel - Database View</h1>
+          
+          <!-- Stats -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-surface p-6 rounded-xl shadow-sm">
+              <div class="flex items-center justify-between">
+                <div><p class="text-text-secondary text-sm">Total Students</p><p id="admin-total-students" class="text-3xl font-bold mt-1">0</p></div>
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"><i class="fas fa-users text-primary text-xl"></i></div>
+              </div>
+            </div>
+            <div class="bg-surface p-6 rounded-xl shadow-sm">
+              <div class="flex items-center justify-between">
+                <div><p class="text-text-secondary text-sm">Total Users</p><p id="admin-total-users" class="text-3xl font-bold mt-1">0</p></div>
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"><i class="fas fa-user-check text-success text-xl"></i></div>
+              </div>
+            </div>
+            <div class="bg-surface p-6 rounded-xl shadow-sm">
+              <div class="flex items-center justify-between">
+                <div><p class="text-text-secondary text-sm">Total Marks</p><p id="admin-total-marks" class="text-3xl font-bold mt-1">0</p></div>
+                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center"><i class="fas fa-clipboard-check text-warning text-xl"></i></div>
+              </div>
+            </div>
+            <div class="bg-surface p-6 rounded-xl shadow-sm">
+              <div class="flex items-center justify-between">
+                <div><p class="text-text-secondary text-sm">Total Attendance</p><p id="admin-total-attendance" class="text-3xl font-bold mt-1">0</p></div>
+                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"><i class="fas fa-calendar text-purple-600 text-xl"></i></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tabs for different data -->
+          <div class="bg-surface rounded-xl shadow-sm overflow-hidden">
+            <div class="flex border-b">
+              <button onclick="switchAdminTab('users')" id="tab-admin-users" class="flex-1 py-4 font-medium text-sm tab-active">Users</button>
+              <button onclick="switchAdminTab('students')" id="tab-admin-students" class="flex-1 py-4 font-medium text-sm text-text-secondary">Students</button>
+              <button onclick="switchAdminTab('marks')" id="tab-admin-marks" class="flex-1 py-4 font-medium text-sm text-text-secondary">Marks</button>
+              <button onclick="switchAdminTab('attendance')" id="tab-admin-attendance" class="flex-1 py-4 font-medium text-sm text-text-secondary">Attendance</button>
+            </div>
+            
+            <!-- Users Table -->
+            <div id="admin-users-content" class="admin-tab-content">
+              <table class="w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">ID</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Email</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Name</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Provider</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Created</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-table"><tr><td colspan="5" class="px-6 py-8 text-center text-text-secondary">Loading...</td></tr></tbody>
+              </table>
+            </div>
+            
+            <!-- Students Table -->
+            <div id="admin-students-content" class="admin-tab-content hidden">
+              <table class="w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">ID</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Reg No</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Name</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Dept</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Year</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Email</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-students-table"><tr><td colspan="6" class="px-6 py-8 text-center text-text-secondary">Loading...</td></tr></tbody>
+              </table>
+            </div>
+            
+            <!-- Marks Table -->
+            <div id="admin-marks-content" class="admin-tab-content hidden">
+              <table class="w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">ID</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Student ID</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Subject</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Marks</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Created</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-marks-table"><tr><td colspan="5" class="px-6 py-8 text-center text-text-secondary">Loading...</td></tr></tbody>
+              </table>
+            </div>
+            
+            <!-- Attendance Table -->
+            <div id="admin-attendance-content" class="admin-tab-content hidden">
+              <table class="w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">ID</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Student ID</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Date</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Status</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-text-secondary">Created</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-attendance-table"><tr><td colspan="5" class="px-6 py-8 text-center text-text-secondary">Loading...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add/Edit Student Modal -->
+  <div id="student-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-overlay absolute inset-0" onclick="closeModal('student-modal')"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 z-10">
+      <div class="flex justify-between items-center mb-6">
+        <h2 id="student-modal-title" class="text-xl font-bold">Add Student</h2>
+        <button onclick="closeModal('student-modal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <form id="student-form" class="space-y-4">
+        <input type="hidden" id="student-id">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-text-secondary mb-2">Name *</label>
+            <input type="text" id="student-name" required
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
+              placeholder="Full Name">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-secondary mb-2">Register No *</label>
+            <input type="text" id="student-regno" required
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
+              placeholder="e.g., CS21A001">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-text-secondary mb-2">Department *</label>
+            <select id="student-department" required
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none">
+              <option value="">Select</option>
+              <option value="CSE">CSE</option><option value="ECE">ECE</option>
+              <option value="MECH">MECH</option><option value="CIVIL">CIVIL</option>
+              <option value="IT">IT</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-secondary mb-2">Year *</label>
+            <select id="student-year" required
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none">
+              <option value="">Select</option>
+              <option value="1">1st Year</option><option value="2">2nd Year</option>
+              <option value="3">3rd Year</option><option value="4">4th Year</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-text-secondary mb-2">Email *</label>
+            <input type="email" id="student-email" required
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
+              placeholder="email@example.com">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-secondary mb-2">Phone</label>
+            <input type="tel" id="student-phone"
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
+              placeholder="Phone Number">
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" onclick="closeModal('student-modal')" 
+            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+          <button type="submit" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primaryDark transition">Save Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Marks Modal -->
+  <div id="marks-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-overlay absolute inset-0" onclick="closeModal('marks-modal')"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-surface rounded-xl shadow-xl w-full max-w-md p-6 z-10">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold">Add Marks</h2>
+        <button onclick="closeModal('marks-modal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <form id="marks-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text-secondary mb-2">Student *</label>
+          <select id="marks-form-student" required
+            class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none">
+            <option value="">Select Student</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text-secondary mb-2">Subject *</label>
+          <input type="text" id="marks-subject" required
+            class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
+            placeholder="e.g., Mathematics">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-text-secondary mb-2">Marks *</label>
+            <input type="number" id="marks-score" required min="0"
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
+              placeholder="0">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-secondary mb-2">Max Marks</label>
+            <input type="number" id="marks-max" value="100" min="1"
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none">
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" onclick="closeModal('marks-modal')" 
+            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+          <button type="submit" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primaryDark transition">Add Marks</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Update Attendance Modal -->
+  <div id="attendance-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-overlay absolute inset-0" onclick="closeModal('attendance-modal')"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-surface rounded-xl shadow-xl w-full max-w-sm p-6 z-10">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold">Update Attendance</h2>
+        <button onclick="closeModal('attendance-modal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <form id="attendance-form" class="space-y-4">
+        <input type="hidden" id="attendance-id">
+        <input type="hidden" id="attendance-student-id">
+        <input type="hidden" id="attendance-date">
+        <div>
+          <label class="block text-sm font-medium text-text-secondary mb-2">Status</label>
+          <select id="attendance-status" required
+            class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none">
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+            <option value="Leave">Leave</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" onclick="closeModal('attendance-modal')" 
+            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+          <button type="submit" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primaryDark transition">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="fixed inset-0 bg-white z-50 hidden flex items-center justify-center">
+    <div class="loading w-10 h-10 border-4 border-gray-200 rounded-full"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
